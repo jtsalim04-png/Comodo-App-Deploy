@@ -11,6 +11,6 @@ module.exports = {
     ),
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|react-redux|redux-persist|@react-native-async-storage)/)',
+    'node_modules/(?!(react-native|@react-native|@react-navigation|react-redux)/)',
   ],
 };

@@ -1,5 +1,4 @@
-import React from 'react';
-import { View } from 'react-native';
+import React, { useEffect } from 'react';
 import { enableScreens } from 'react-native-screens';
 
 enableScreens();
@@ -9,20 +8,21 @@ import AppNav from './src/navigations';
 import rootSaga from './src/app/sagas';
 import configureStore from './src/app/reducers';
 import { Provider } from 'react-redux';
-import { PersistGate } from 'redux-persist/integration/react';
+import { authBootstrap } from './src/app/actions';
 
-const { store, persistor, runSaga } = configureStore();
+const { store, runSaga } = configureStore();
 runSaga(rootSaga);
 
 const App = () => {
   console.log('App rendering started');
+
+  useEffect(() => {
+    store.dispatch(authBootstrap());
+  }, []);
+
   return (
     <Provider store={store}>
-      <PersistGate
-        loading={<View style={{ flex: 1, backgroundColor: '#DBD8CC' }} />}
-        persistor={persistor}>
-        <AppNav />
-      </PersistGate>
+      <AppNav />
     </Provider>
   );
 };
