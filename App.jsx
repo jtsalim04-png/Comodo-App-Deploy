@@ -9,6 +9,7 @@ import rootSaga from './src/app/sagas';
 import configureStore from './src/app/reducers';
 import { Provider } from 'react-redux';
 import { authBootstrap } from './src/app/actions';
+import { rtConnect } from './src/app/actions';
 
 const { store, runSaga } = configureStore();
 runSaga(rootSaga);
@@ -18,6 +19,7 @@ const App = () => {
 
   useEffect(() => {
     store.dispatch(authBootstrap());
+    store.dispatch(rtConnect());
   }, []);
 
   return (

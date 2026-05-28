@@ -7,6 +7,11 @@ export const RESET_USER_LOGIN = 'RESET_USER_LOGIN';
 export const AUTH_BOOTSTRAP = 'AUTH_BOOTSTRAP';
 export const AUTH_BOOTSTRAP_COMPLETE = 'AUTH_BOOTSTRAP_COMPLETE';
 
+export const RT_CONNECT = 'RT_CONNECT';
+export const RT_CONNECTED = 'RT_CONNECTED';
+export const RT_DISCONNECTED = 'RT_DISCONNECTED';
+export const RT_MESSAGE = 'RT_MESSAGE';
+
 export const authLogin = payload => ({
   type: USER_LOGIN,
   payload,
@@ -18,4 +23,8 @@ export const authLogout = () => ({
 
 export const authBootstrap = () => ({
   type: AUTH_BOOTSTRAP,
+});
+
+export const rtConnect = () => ({
+  type: RT_CONNECT,
 });

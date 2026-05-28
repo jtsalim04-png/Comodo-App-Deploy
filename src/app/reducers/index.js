@@ -2,11 +2,13 @@ import { applyMiddleware, combineReducers, createStore } from 'redux';
 import createSagaMiddleware from 'redux-saga';
 
 import auth from './auth';
+import ws from './ws';
 
 const sagaMiddleware = createSagaMiddleware();
 
 const rootReducer = combineReducers({
   auth,
+  ws,
 });
 
 export default () => {

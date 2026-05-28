@@ -47,3 +47,11 @@ const resolveDevHost = () => {
 
 export const DEV_HOST = resolveDevHost();
 export const BASE_URL = `http://${DEV_HOST}:${API_PORT}`;
+
+/**
+ * Mercure hub URL (Server-Sent Events).
+ * In dev you typically run Mercure on 3000 or behind your reverse proxy.
+ * Update to match your deployment.
+ */
+export const MERCURE_PORT = 3000;
+export const MERCURE_HUB_URL = `http://${DEV_HOST}:${MERCURE_PORT}/.well-known/mercure`;
