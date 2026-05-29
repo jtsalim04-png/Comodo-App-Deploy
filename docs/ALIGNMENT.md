@@ -87,10 +87,15 @@ Separate projects. This document **compares** them and records how the mobile ap
 
 ## Admin
 
-| Web | Mobile |
+| Web ([Comodo-booking](https://github.com/jtsalim04-png/Comodo-booking)) | Mobile |
 |-----|--------|
-| Admin dashboard, events, users | `AdminNav` dashboard, events, users placeholder |
-| Event CRUD | `POST/PUT/DELETE /api/events` |
+| Overview (stats, role chart, top events) | Admin tab **Overview** → `GET /api/admin/dashboard` |
+| Users (CRUD, toggle status, reset password) | Admin tab **Users** → `/api/admin/users` |
+| Events (CRUD) | Admin tab **Events** → `/api/events` |
+| Tickets / Sales (list, create, delete, view) | Admin tab **Tickets** → `/api/admin/tickets` |
+| Activity logs (filters) | Admin tab **Logs** → `/api/admin/activity-logs` |
+
+Mobile uses the hosted website API (`PRODUCTION_API_URL` in `config.js`). Admin JSON routes live under `/api/admin/*` (`ApiAdminController` on the Symfony server). The app shows a 404 hint only when the dashboard route is missing on the deployed host.
 
 ---
 

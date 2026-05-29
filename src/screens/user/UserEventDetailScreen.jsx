@@ -8,8 +8,9 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
+import { publishTicketSale } from '../../app/notifications/publish';
 import CustomButton from '../../components/CustomButton';
 import ComodoCard from '../../components/ComodoCard';
 import ScreenBackground from '../../components/ScreenBackground';
@@ -20,6 +21,7 @@ import theme from '../../utils/theme';
 
 const UserEventDetailScreen = ({ route, navigation }) => {
   const { eventId } = route.params;
+  const dispatch = useDispatch();
   const auth = useSelector(state => state.auth);
   const token = auth?.data?.token;
   const [event, setEvent] = useState(null);
@@ -69,6 +71,13 @@ const UserEventDetailScreen = ({ route, navigation }) => {
     setPurchasing(true);
     try {
       const ticket = await purchaseTicket(token, event);
+
+      await publishTicketSale(dispatch, auth?.data, {
+        event,
+        ticket,
+        user: auth?.data?.user,
+        message: `Ticket purchased for "${event?.title}".`,
+      });
 
       Alert.alert(
         'Purchase successful',

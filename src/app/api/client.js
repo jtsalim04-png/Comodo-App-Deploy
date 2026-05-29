@@ -63,9 +63,11 @@ export async function apiRequest(
       data?.detail ||
       `Request failed (${response.status})`;
 
-    if (token && isJwtAuthError(response.status, message)) {
+    if (token && response.status === 401) {
       notifySessionExpired(
-        typeof message === 'string' && message.toLowerCase().includes('expired')
+        isJwtAuthError(response.status, message) &&
+          typeof message === 'string' &&
+          message.toLowerCase().includes('expired')
           ? 'Your login session has expired. Please sign in again.'
           : 'Please sign in again to continue.',
       );
@@ -75,6 +77,7 @@ export async function apiRequest(
     error.status = response.status;
     error.data = data;
     error.isUnauthorized = response.status === 401;
+    error.isForbidden = response.status === 403;
     error.isRouteNotFound = isRouteNotFoundError(error);
     throw error;
   }

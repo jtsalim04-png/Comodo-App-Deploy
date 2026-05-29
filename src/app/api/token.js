@@ -1,5 +1,5 @@
 /** Decode JWT payload (no signature check — server is source of truth). */
-const decodePayload = token => {
+export const decodePayload = token => {
   if (!token || typeof token !== 'string') {
     return null;
   }
@@ -22,6 +22,20 @@ export const isTokenExpired = (token, skewSeconds = 30) => {
     return false;
   }
   return Date.now() >= (payload.exp - skewSeconds) * 1000;
+};
+
+/** Email + roles from Lexik JWT (username claim = email). */
+export const getUserFromToken = token => {
+  const payload = decodePayload(token);
+  if (!payload) {
+    return null;
+  }
+  const email = payload.username || payload.email || null;
+  const roles = Array.isArray(payload.roles) ? payload.roles : [];
+  if (!email && roles.length === 0) {
+    return null;
+  }
+  return { email, roles };
 };
 
 export const isJwtAuthError = (status, message = '') => {

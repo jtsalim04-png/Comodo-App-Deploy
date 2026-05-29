@@ -9,10 +9,13 @@ import {
   setUnauthorizedHandler,
 } from '../app/api/session';
 import { isTokenExpired } from '../app/api/token';
+import { NotificationPanelProvider } from '../context/NotificationPanelContext';
 import { isAdmin } from '../utils/roles';
 import AuthNav from './AuthNav';
 import UserNav from './UserNav';
 import AdminNav from './AdminNav';
+import NotificationHost from './NotificationHost';
+import { navigationRef } from './navigationRef';
 
 const AppNavigation = () => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -60,8 +63,16 @@ const AppNavigation = () => {
   };
 
   return (
-    <NavigationContainer>
-      {isLoggedIn ? renderMain() : <AuthNav />}
+    <NavigationContainer ref={navigationRef}>
+      {isLoggedIn ? (
+        <NotificationPanelProvider>
+          <NotificationHost enabled>
+            {renderMain()}
+          </NotificationHost>
+        </NotificationPanelProvider>
+      ) : (
+        <AuthNav />
+      )}
     </NavigationContainer>
   );
 };

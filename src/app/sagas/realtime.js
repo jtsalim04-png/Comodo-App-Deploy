@@ -6,7 +6,6 @@ import { isAdmin } from '../../utils/roles';
 import {
   AUTH_BOOTSTRAP_COMPLETE,
   RT_CONNECTED,
-  RT_CONNECT,
   RT_DISCONNECTED,
   RT_MESSAGE,
   USER_LOGIN_COMPLETE,
@@ -57,36 +56,28 @@ function* runMercureSession(hubUrl, topic, mercureJwt) {
         yield put({ type: RT_DISCONNECTED });
         return false;
       } else if (evt.type === 'message') {
-        yield put({ type: RT_MESSAGE, payload: safeParseMessage(evt.data) });
+        const payload = safeParseMessage(evt.data);
+        yield put({ type: RT_MESSAGE, payload });
       }
     }
   } finally {
     ch.close();
     try {
       es.close();
-    } catch (e) {}
+    } catch (e) {
+      // ignore
+    }
     if (yield cancelled()) {
       yield put({ type: RT_DISCONNECTED });
     }
   }
 }
 
-function* adminPollingFallback() {
-  while (true) {
-    yield put({
-      type: RT_MESSAGE,
-      payload: { type: 'admin.poll' },
-    });
-    yield delay(12000);
-  }
-}
-
 /**
- * Admin live updates: Mercure SSE when hub is configured, else periodic refresh poll.
+ * Mercure SSE for push updates (tickets, events). Admin screens also poll via useAdminLiveUpdates.
  */
-export function* adminLiveUpdatesLoop() {
+export function* liveUpdatesLoop() {
   yield take(AUTH_BOOTSTRAP_COMPLETE);
-  yield take(RT_CONNECT);
 
   while (true) {
     let auth = yield select(selectAuth);
@@ -95,7 +86,7 @@ export function* adminLiveUpdatesLoop() {
       auth = yield select(selectAuth);
     }
 
-    if (!isAdmin(auth)) {
+    if (!auth?.token) {
       yield delay(3000);
       continue;
     }
@@ -104,21 +95,12 @@ export function* adminLiveUpdatesLoop() {
     try {
       config = yield call(fetchRealtimeConfig);
     } catch (e) {
-      // API unreachable — retry later
       yield delay(5000);
       continue;
     }
 
     if (!config?.enabled || !config?.hubUrl) {
-      yield put({
-        type: RT_MESSAGE,
-        payload: {
-          type: 'ws.info',
-          message:
-            'Live updates: Mercure not configured on server. Polling every 12s instead.',
-        },
-      });
-      yield call(adminPollingFallback);
+      yield delay(isAdmin(auth) ? 5000 : 15000);
       continue;
     }
 
@@ -142,3 +124,6 @@ export function* adminLiveUpdatesLoop() {
     yield delay(3000);
   }
 }
+
+/** @deprecated alias */
+export const adminLiveUpdatesLoop = liveUpdatesLoop;

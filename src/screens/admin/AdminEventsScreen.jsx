@@ -10,18 +10,21 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
+import { rtPublish } from '../../app/actions';
+import { deleteEvent, fetchEvents } from '../../app/api/events';
+import { RT } from '../../app/realtime/types';
 import EventCard from '../../components/EventCard';
 import CustomButton from '../../components/CustomButton';
 import ScreenBackground from '../../components/ScreenBackground';
-import { deleteEvent, fetchEvents } from '../../app/api/events';
 import useAdminLiveUpdates from '../../hooks/useAdminLiveUpdates';
 import { ROUTES, showApiError } from '../../utils';
 import theme from '../../utils/theme';
 
 const AdminEventsScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
   const token = useSelector(state => state.auth?.data?.token);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +59,13 @@ const AdminEventsScreen = () => {
         onPress: async () => {
           try {
             await deleteEvent(token, event.id);
+            dispatch(
+              rtPublish({
+                type: RT.EVENT_DELETED,
+                eventTitle: event.title,
+                eventId: event.id,
+              }),
+            );
             load();
           } catch (error) {
             showApiError(error, 'Delete failed');

@@ -1,7 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -10,31 +9,42 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 
 import CustomButton from '../../components/CustomButton';
 import StatCard from '../../components/StatCard';
-import { authLogout } from '../../app/actions';
+import { fetchAdminDashboard } from '../../app/api/admin';
 import ScreenBackground from '../../components/ScreenBackground';
-import { fetchEvents } from '../../app/api/events';
 import useAdminLiveUpdates from '../../hooks/useAdminLiveUpdates';
-import { ROUTES, showApiError } from '../../utils';
+import { ROUTES, classifyAdminLoadError, showAdminApiError } from '../../utils';
 import theme from '../../utils/theme';
 
 const AdminDashboardScreen = () => {
   const navigation = useNavigation();
-  const dispatch = useDispatch();
   const token = useSelector(state => state.auth?.data?.token);
-  const [events, setEvents] = useState([]);
+  const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [apiUnavailable, setApiUnavailable] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const data = await fetchEvents(token);
-      setEvents(data);
+      setApiUnavailable(false);
+      setAccessDenied(false);
+      const data = await fetchAdminDashboard(token);
+      setDashboard(data);
     } catch (error) {
-      showApiError(error, 'Could not load dashboard data');
+      if (
+        classifyAdminLoadError(error, {
+          setApiUnavailable,
+          setAccessDenied,
+        })
+      ) {
+        setDashboard(null);
+        return;
+      }
+      showAdminApiError(error, 'Could not load dashboard');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -50,16 +60,9 @@ const AdminDashboardScreen = () => {
 
   useAdminLiveUpdates(() => load());
 
-  const stats = useMemo(() => {
-    const revenue = events.reduce(
-      (sum, event) => sum + Number(event.price || 0),
-      0,
-    );
-    return {
-      totalEvents: events.length,
-      revenue: revenue.toFixed(2),
-    };
-  }, [events]);
+  const stats = dashboard?.stats;
+  const roleChart = dashboard?.roleChart;
+  const topEvents = dashboard?.topEvents || [];
 
   return (
     <ScreenBackground overlayColor="rgba(219, 216, 204, 0.72)">
@@ -76,42 +79,98 @@ const AdminDashboardScreen = () => {
         }>
         <Text style={styles.title}>Admin dashboard</Text>
         <Text style={styles.subtitle}>
-          Live updates when customers purchase tickets on the website (no refresh needed).
+          Overview, users, events, tickets, and activity — aligned with the web
+          admin panel.
         </Text>
         <CustomButton
-          label="Log out"
-          variant="danger"
-          containerStyle={styles.logout}
-          onPress={() => dispatch(authLogout())}
+          label="Account & log out"
+          variant="secondary"
+          containerStyle={styles.accountBtn}
+          onPress={() => navigation.navigate(ROUTES.USER_PROFILE)}
         />
 
         {loading ? (
           <ActivityIndicator color={theme.colors.butterscotch} size="large" />
+        ) : accessDenied ? (
+          <View style={styles.hintCard}>
+            <Text style={styles.hintTitle}>Admin access required</Text>
+            <Text style={styles.hintBody}>
+              Your account does not have ROLE_ADMIN. Sign in with an
+              administrator account to view the dashboard.
+            </Text>
+          </View>
+        ) : apiUnavailable ? (
+          <View style={styles.hintCard}>
+            <Text style={styles.hintTitle}>Admin API not available</Text>
+            <Text style={styles.hintBody}>
+              GET /api/admin/dashboard returned 404 on the server. Deploy the
+              latest Comodo website with ApiAdminController, then reload. Events
+              and tickets still work via /api/events and /api/tickets.
+            </Text>
+          </View>
         ) : (
           <>
             <View style={styles.statsRow}>
-              <StatCard label="Total events" value={String(stats.totalEvents)} />
+              <StatCard label="Total users" value={String(stats?.totalUsers ?? 0)} />
               <StatCard
-                label="Est. revenue"
-                value={`₱${stats.revenue}`}
+                label="Total events"
+                value={String(stats?.totalEvents ?? 0)}
+                variant="dark"
+              />
+              <StatCard
+                label="Total tickets"
+                value={String(stats?.totalTickets ?? 0)}
+              />
+              <StatCard
+                label="Total revenue"
+                value={`₱${Number(stats?.totalRevenue ?? 0).toFixed(2)}`}
                 variant="dark"
               />
             </View>
 
-            <View style={styles.menu}>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => navigation.navigate(ROUTES.ADMIN_EVENTS)}>
-                <Text style={styles.menuTitle}>Manage events</Text>
-                <Text style={styles.menuDesc}>Create, edit, and remove events</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => navigation.navigate(ROUTES.ADMIN_USERS)}>
-                <Text style={styles.menuTitle}>Users</Text>
-                <Text style={styles.menuDesc}>User management overview</Text>
-              </TouchableOpacity>
+            {roleChart?.labels?.length ? (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>User roles</Text>
+                {roleChart.labels.map((label, index) => (
+                  <View key={label} style={styles.roleRow}>
+                    <Text style={styles.roleLabel}>{label}</Text>
+                    <Text style={styles.roleValue}>
+                      {roleChart.data?.[index] ?? 0}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Top events by revenue</Text>
+              {topEvents.length === 0 ? (
+                <Text style={styles.muted}>No ticket sales yet.</Text>
+              ) : (
+                topEvents.map(event => (
+                  <View key={event.eventId} style={styles.eventRow}>
+                    <Text style={styles.eventTitle} numberOfLines={1}>
+                      {event.title}
+                    </Text>
+                    <Text style={styles.eventMeta}>
+                      ₱{Number(event.revenue).toFixed(2)} · {event.tickets}{' '}
+                      ticket{event.tickets === 1 ? '' : 's'}
+                    </Text>
+                  </View>
+                ))
+              )}
             </View>
+
+            <TouchableOpacity
+              style={styles.linkRow}
+              onPress={() => navigation.navigate(ROUTES.ADMIN_USERS)}>
+              <Text style={styles.linkText}>Manage users →</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.linkRow}
+              onPress={() => navigation.navigate(ROUTES.ADMIN_TICKETS)}>
+              <Text style={styles.linkText}>Tickets / sales →</Text>
+            </TouchableOpacity>
           </>
         )}
       </ScrollView>
@@ -132,9 +191,10 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: theme.colors.textMuted,
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+    lineHeight: 22,
   },
-  logout: {
+  accountBtn: {
     marginBottom: theme.spacing.lg,
   },
   statsRow: {
@@ -143,25 +203,76 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
     marginBottom: theme.spacing.lg,
   },
-  menu: {
-    gap: theme.spacing.md,
+  section: {
+    backgroundColor: theme.colors.cream,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.borderMuted,
   },
-  menuItem: {
+  sectionTitle: {
+    fontSize: theme.fontSize.heading,
+    fontWeight: '600',
+    color: theme.colors.tuatara,
+    marginBottom: theme.spacing.sm,
+  },
+  roleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.borderMuted,
+  },
+  roleLabel: {
+    color: theme.colors.tuatara,
+    fontWeight: '500',
+  },
+  roleValue: {
+    color: theme.colors.butterscotch,
+    fontWeight: '700',
+  },
+  eventRow: {
+    paddingVertical: theme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.borderMuted,
+  },
+  eventTitle: {
+    fontWeight: '600',
+    color: theme.colors.tuatara,
+    marginBottom: 2,
+  },
+  eventMeta: {
+    color: theme.colors.textMuted,
+    fontSize: theme.fontSize.small,
+  },
+  muted: {
+    color: theme.colors.textMuted,
+  },
+  linkRow: {
+    paddingVertical: theme.spacing.sm,
+  },
+  linkText: {
+    color: theme.colors.butterscotch,
+    fontWeight: '600',
+    fontSize: theme.fontSize.body,
+  },
+  hintCard: {
     backgroundColor: theme.colors.cream,
     borderRadius: theme.radius.lg,
     padding: theme.spacing.lg,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: theme.colors.butterscotch,
   },
-  menuTitle: {
-    fontSize: theme.fontSize.heading,
+  hintTitle: {
     fontWeight: '600',
-    color: theme.colors.butterscotch,
-    marginBottom: theme.spacing.xs,
-  },
-  menuDesc: {
+    fontSize: theme.fontSize.heading,
     color: theme.colors.tuatara,
-    fontSize: theme.fontSize.small,
+    marginBottom: theme.spacing.sm,
+  },
+  hintBody: {
+    color: theme.colors.textMuted,
+    lineHeight: 22,
   },
 });
 

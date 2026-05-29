@@ -16,4 +16,9 @@ export default {
   ADMIN_EVENTS: 'AdminEvents',
   ADMIN_EVENT_FORM: 'AdminEventForm',
   ADMIN_USERS: 'AdminUsers',
+  ADMIN_USER_FORM: 'AdminUserForm',
+  ADMIN_TICKETS: 'AdminTickets',
+  ADMIN_TICKET_FORM: 'AdminTicketForm',
+  ADMIN_TICKET_DETAIL: 'AdminTicketDetail',
+  ADMIN_ACTIVITY_LOGS: 'AdminActivityLogs',
 };

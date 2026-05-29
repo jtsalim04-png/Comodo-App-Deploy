@@ -1,17 +1,17 @@
 import { eventChannel } from 'redux-saga';
 import { call, cancelled, delay, put, select, take, takeLatest } from 'redux-saga/effects';
 import { createAuthedWebSocket, createDemoEchoWebSocket } from '../api/ws';
-import { USE_BACKEND_WEBSOCKET } from '../api/config';
+import { USE_BACKEND_WEBSOCKET, USE_LOCAL_API } from '../api/config';
 import {
   clearActiveWebSocket,
   sendWebSocketMessage,
   setActiveWebSocket,
 } from '../api/wsConnection';
 import { showLocalNotification } from '../api/notifications';
+import { RT } from '../realtime/types';
 import {
   AUTH_BOOTSTRAP_COMPLETE,
   RT_CONNECTED,
-  RT_CONNECT,
   RT_DISCONNECTED,
   RT_MESSAGE,
   USER_LOGIN_COMPLETE,
@@ -19,6 +19,7 @@ import {
 } from '../actions';
 
 const selectApiJwt = state => state?.auth?.data?.token ?? null;
+const selectAuth = state => state.auth?.data ?? null;
 
 function createSocketChannel(socket) {
   return eventChannel(emit => {
@@ -47,28 +48,6 @@ function safeParseMessage(raw) {
   }
 }
 
-function notificationCopy(payload) {
-  if (!payload) {
-    return { title: 'Comodo', body: 'Realtime update received.' };
-  }
-  const type = payload.type || payload.event || 'update';
-  const title = payload.title || `Comodo · ${type}`;
-  const body =
-    payload.message ||
-    payload.body ||
-    (typeof payload.data === 'string' ? payload.data : null) ||
-    JSON.stringify(payload).slice(0, 120);
-  return { title, body };
-}
-
-function* notifyFromPayload(payload) {
-  if (payload?.type === 'ws.info') {
-    return;
-  }
-  const { title, body } = notificationCopy(payload);
-  yield call(showLocalNotification, { title, body, data: payload || {} });
-}
-
 function* runSocketSession(socket, { demo = false } = {}) {
   setActiveWebSocket(socket);
   const channel = yield call(createSocketChannel, socket);
@@ -88,10 +67,12 @@ function* runSocketSession(socket, { demo = false } = {}) {
       } else if (evt.type === 'message') {
         const payload = safeParseMessage(evt.data);
         const normalized = demo
-          ? { type: 'ws.echo', message: payload?.data ?? payload }
+          ? { type: RT.WS_ECHO, message: payload?.data ?? payload }
           : payload;
         yield put({ type: RT_MESSAGE, payload: normalized });
-        yield call(notifyFromPayload, normalized);
+        if (!demo) {
+          yield call(notifyIncomingPayload, normalized);
+        }
       }
     }
   } finally {
@@ -112,9 +93,9 @@ function* connectDemoEcho() {
   yield put({
     type: RT_MESSAGE,
     payload: {
-      type: 'ws.info',
+      type: RT.WS_INFO,
       message:
-        'Deployed API (Railway) has no WebSocket server. Connected to public echo demo for realtime UI.',
+        'Backend WebSocket unavailable. Connected to echo demo (Profile screen only).',
     },
   });
   const echoSocket = yield call(createDemoEchoWebSocket);
@@ -123,12 +104,13 @@ function* connectDemoEcho() {
 
 export function* wsConnectLoop() {
   yield take(AUTH_BOOTSTRAP_COMPLETE);
-  yield take(RT_CONNECT);
 
   while (true) {
     if (!USE_BACKEND_WEBSOCKET) {
-      yield call(connectDemoEcho);
-      yield delay(2000);
+      if (USE_LOCAL_API) {
+        yield call(connectDemoEcho);
+      }
+      yield delay(5000);
       continue;
     }
 
@@ -138,14 +120,19 @@ export function* wsConnectLoop() {
       token = yield select(selectApiJwt);
     }
 
+    if (!token) {
+      yield delay(3000);
+      continue;
+    }
+
     const backendSocket = yield call(createAuthedWebSocket, token);
     const backendOk = yield call(runSocketSession, backendSocket, { demo: false });
 
-    if (!backendOk) {
+    if (!backendOk && USE_LOCAL_API) {
       yield call(connectDemoEcho);
     }
 
-    yield delay(2000);
+    yield delay(3000);
   }
 }
 

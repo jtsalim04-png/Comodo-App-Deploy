@@ -1,6 +1,7 @@
 import { all } from 'redux-saga/effects';
 import { authBootstrap, authLogout, googleLogin, userLogin } from './auth';
-import { adminLiveUpdatesLoop } from './realtime';
+import { notificationIngestWatcher, notificationLogoutClear } from './notifications';
+import { liveUpdatesLoop } from './realtime';
 import { wsConnectLoop, wsSendPing } from './ws';
 
 export default function* rootSaga() {
@@ -9,7 +10,9 @@ export default function* rootSaga() {
     googleLogin(),
     authBootstrap(),
     authLogout(),
-    adminLiveUpdatesLoop(),
+    notificationIngestWatcher(),
+    notificationLogoutClear(),
+    liveUpdatesLoop(),
     wsConnectLoop(),
     wsSendPing(),
   ]);

@@ -13,6 +13,7 @@ import { useSelector } from 'react-redux';
 import EventCard from '../../components/EventCard';
 import ScreenBackground from '../../components/ScreenBackground';
 import { fetchEvents } from '../../app/api/events';
+import useLiveUpdates from '../../hooks/useLiveUpdates';
 import { ROUTES, showApiError } from '../../utils';
 import theme from '../../utils/theme';
 
@@ -40,6 +41,8 @@ const UserEventsScreen = () => {
       loadEvents();
     }, [loadEvents]),
   );
+
+  useLiveUpdates(() => loadEvents());
 
   return (
     <ScreenBackground>

@@ -1,38 +1,26 @@
 import { useEffect, useRef } from 'react';
-import { useSelector } from 'react-redux';
 
-import { showLocalNotification } from '../app/api/notifications';
-import { isAdmin } from '../utils/roles';
+import { ADMIN_POLL_INTERVAL_MS } from '../app/realtime/types';
+import useLiveUpdates from './useLiveUpdates';
 
 /**
- * Refetches admin data when a ticket is purchased on the website (Mercure SSE or poll).
+ * Admin screens: Mercure/WebSocket push (useLiveUpdates) + 3s background refetch.
+ * Polling runs in the hook so it works even if the realtime saga missed RT_CONNECT.
  */
-export default function useAdminLiveUpdates(onRefresh) {
-  const auth = useSelector(state => state.auth);
-  const lastMessage = useSelector(state => state.ws?.lastMessage);
-  const lastMessageAt = useSelector(state => state.ws?.lastMessageAt);
+export default function useAdminLiveUpdates(onRefresh, { enabled = true } = {}) {
   const onRefreshRef = useRef(onRefresh);
   onRefreshRef.current = onRefresh;
 
+  useLiveUpdates(onRefresh, { enabled });
+
   useEffect(() => {
-    if (!isAdmin(auth?.data) || !lastMessageAt || !lastMessage) {
-      return;
+    if (!enabled) {
+      return undefined;
     }
 
-    const type = lastMessage?.type;
-    if (type === 'ticket.purchased' || type === 'admin.poll') {
-      onRefreshRef.current?.();
-
-      if (type === 'ticket.purchased') {
-        const title = lastMessage.eventTitle || 'New ticket sale';
-        const email = lastMessage.customerEmail || 'Customer';
-        const price = lastMessage.price != null ? `₱${lastMessage.price}` : '';
-        showLocalNotification({
-          title: 'New ticket purchased',
-          body: [title, email, price].filter(Boolean).join(' · '),
-          data: lastMessage,
-        });
-      }
-    }
-  }, [auth?.data, lastMessage, lastMessageAt]);
+    const tick = () => onRefreshRef.current?.();
+    tick();
+    const id = setInterval(tick, ADMIN_POLL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [enabled]);
 }

@@ -2,12 +2,14 @@ import { applyMiddleware, combineReducers, createStore } from 'redux';
 import createSagaMiddleware from 'redux-saga';
 
 import auth from './auth';
+import notifications from './notifications';
 import ws from './ws';
 
 const sagaMiddleware = createSagaMiddleware();
 
 const rootReducer = combineReducers({
   auth,
+  notifications,
   ws,
 });
 

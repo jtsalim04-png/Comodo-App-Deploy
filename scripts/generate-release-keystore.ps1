@@ -22,7 +22,7 @@ if (Test-Path $keystorePath) {
     -alias comodo-release `
     -keyalg RSA -keysize 2048 -validity 10000 `
     -storepass $storePass -keypass $keyPass `
-    -dname "CN=Comodo App, OU=Mobile, O=Comodo, L=Manila, ST=Metro, C=PH"
+    -dname "CN=Jefferson Salim, OU=Mobile, O=APP-DEV A, L=Manila, ST=Metro, C=PH"
 
   Write-Host "Created keystore: $keystorePath"
 }

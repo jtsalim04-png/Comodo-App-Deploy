@@ -24,8 +24,8 @@ const RealtimeDemoScreen = () => {
           <Text style={styles.title}>WebSocket realtime demo</Text>
           <Text style={styles.subtitle}>
             {USE_BACKEND_WEBSOCKET
-              ? 'Tries your Symfony WebSocket, then falls back to the echo demo server.'
-              : 'Production API (Railway) is HTTPS-only — no WebSocket yet. Uses echo demo for this screen.'}
+              ? `Connects to ${WS_URL} when signed in. Local dev falls back to ${WS_DEMO_ECHO_URL} if the server is down.`
+              : 'WebSocket disabled in config.'}
           </Text>
 
           <View style={styles.row}>

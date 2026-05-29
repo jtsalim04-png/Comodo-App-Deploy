@@ -6,8 +6,10 @@ import {
   ScrollView,
   StyleSheet,
 } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
+import { rtPublish } from '../../app/actions';
+import { RT } from '../../app/realtime/types';
 import ComodoCard from '../../components/ComodoCard';
 import CustomButton from '../../components/CustomButton';
 import CustomTextInput from '../../components/CustomTextInput';
@@ -30,6 +32,7 @@ const toApiDate = value => {
 const AdminEventFormScreen = ({ route, navigation }) => {
   const { mode, event } = route.params || {};
   const isEdit = mode === 'edit';
+  const dispatch = useDispatch();
   const token = useSelector(state => state.auth?.data?.token);
 
   const [title, setTitle] = useState(event?.title || '');
@@ -63,8 +66,22 @@ const AdminEventFormScreen = ({ route, navigation }) => {
     try {
       if (isEdit) {
         await updateEvent(token, event.id, payload);
+        dispatch(
+          rtPublish({
+            type: RT.EVENT_UPDATED,
+            eventTitle: payload.title,
+            eventId: event.id,
+          }),
+        );
       } else {
-        await createEvent(token, payload);
+        const created = await createEvent(token, payload);
+        dispatch(
+          rtPublish({
+            type: RT.EVENT_CREATED,
+            eventTitle: payload.title,
+            eventId: created?.id,
+          }),
+        );
       }
       Alert.alert('Success', `Event ${isEdit ? 'updated' : 'created'}.`);
       navigation.goBack();

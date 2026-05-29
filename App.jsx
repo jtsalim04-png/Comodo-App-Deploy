@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { enableScreens } from 'react-native-screens';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 enableScreens();
 
@@ -30,9 +31,11 @@ const App = () => {
   }, []);
 
   return (
-    <Provider store={store}>
-      <AppNav />
-    </Provider>
+    <SafeAreaProvider>
+      <Provider store={store}>
+        <AppNav />
+      </Provider>
+    </SafeAreaProvider>
   );
 };
 

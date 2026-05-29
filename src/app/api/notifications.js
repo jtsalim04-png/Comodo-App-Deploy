@@ -6,15 +6,16 @@ const CHANNEL_ID = 'comodo-realtime';
 let channelReady = false;
 
 export async function ensureNotificationChannel() {
-  if (channelReady || Platform.OS !== 'android') {
-    channelReady = true;
+  if (channelReady) {
     return CHANNEL_ID;
   }
-  await notifee.createChannel({
-    id: CHANNEL_ID,
-    name: 'Comodo updates',
-    importance: AndroidImportance.HIGH,
-  });
+  if (Platform.OS === 'android') {
+    await notifee.createChannel({
+      id: CHANNEL_ID,
+      name: 'Comodo updates',
+      importance: AndroidImportance.HIGH,
+    });
+  }
   channelReady = true;
   return CHANNEL_ID;
 }
@@ -26,13 +27,32 @@ export async function requestNotificationPermission() {
 
 export async function showLocalNotification({ title, body, data } = {}) {
   await ensureNotificationChannel();
+
+  const stringData = {};
+  const raw = data || {};
+  for (const key of Object.keys(raw)) {
+    const value = raw[key];
+    if (value != null && typeof value === 'object') {
+      stringData[key] = JSON.stringify(value);
+    } else {
+      stringData[key] = String(value ?? '');
+    }
+  }
+
   await notifee.displayNotification({
     title: title || 'Comodo',
     body: body || 'You have a new update.',
-    data: data || {},
+    data: stringData,
     android: {
       channelId: CHANNEL_ID,
       pressAction: { id: 'default' },
+    },
+    ios: {
+      foregroundPresentationOptions: {
+        banner: true,
+        sound: true,
+        list: true,
+      },
     },
   });
 }

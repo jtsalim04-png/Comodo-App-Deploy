@@ -11,4 +11,8 @@ export const API_PATHS = {
   register: '/api/register',
   events: '/api/events',
   tickets: '/api/tickets',
+  adminDashboard: '/api/admin/dashboard',
+  adminUsers: '/api/admin/users',
+  adminTickets: '/api/admin/tickets',
+  adminActivityLogs: '/api/admin/activity-logs',
 };

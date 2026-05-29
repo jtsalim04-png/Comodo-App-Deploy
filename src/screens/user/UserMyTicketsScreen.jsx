@@ -14,6 +14,7 @@ import { useSelector } from 'react-redux';
 import TicketCard from '../../components/TicketCard';
 import ScreenBackground from '../../components/ScreenBackground';
 import { fetchMyTickets } from '../../app/api/tickets';
+import useLiveUpdates from '../../hooks/useLiveUpdates';
 import { ROUTES, showApiError } from '../../utils';
 import theme from '../../utils/theme';
 
@@ -49,6 +50,8 @@ const UserMyTicketsScreen = () => {
       loadTickets();
     }, [loadTickets]),
   );
+
+  useLiveUpdates(() => loadTickets());
 
   return (
     <ScreenBackground>

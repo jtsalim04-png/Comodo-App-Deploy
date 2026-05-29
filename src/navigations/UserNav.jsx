@@ -4,6 +4,7 @@ import { Text } from 'react-native';
 
 import { ROUTES } from '../utils';
 import theme from '../utils/theme';
+import { appHeaderOptions } from './notificationHeader';
 
 import UserDashboardScreen from '../screens/user/UserDashboardScreen';
 import UserEventsScreen from '../screens/user/UserEventsScreen';
@@ -15,12 +16,6 @@ import RealtimeDemoScreen from '../screens/user/RealtimeDemoScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
-
-const headerOptions = {
-  headerStyle: { backgroundColor: theme.colors.tuatara },
-  headerTintColor: theme.colors.timberwolf,
-  headerTitleStyle: { fontWeight: '600' },
-};
 
 const tabBarOptions = {
   tabBarStyle: {
@@ -47,7 +42,7 @@ const tabIcon =
     );
 
 const UserTabs = () => (
-  <Tab.Navigator screenOptions={{ ...headerOptions, ...tabBarOptions }}>
+  <Tab.Navigator screenOptions={{ ...appHeaderOptions, ...tabBarOptions }}>
     <Tab.Screen
       name={ROUTES.USER_DASHBOARD}
       component={UserDashboardScreen}
@@ -88,7 +83,7 @@ const UserTabs = () => (
 );
 
 const UserNavigation = () => (
-  <Stack.Navigator screenOptions={headerOptions}>
+  <Stack.Navigator screenOptions={appHeaderOptions}>
     <Stack.Screen
       name="UserTabs"
       component={UserTabs}

@@ -1,15 +1,16 @@
 import { Platform } from 'react-native';
 
 /**
- * Deployed Comodo website + API (Symfony on Railway).
+ * Hosted Comodo website + JSON API (Symfony).
+ * The mobile app runs on your device/emulator; only the website is hosted here.
  * @see https://webdevcomodo-production-8ae6.up.railway.app
  */
 export const PRODUCTION_API_URL =
   'https://webdevcomodo-production-8ae6.up.railway.app';
 
 /**
- * Set true to use local Symfony instead of Railway (symfony server:start → port 8000).
- * For USB debugging with local API: true + `npm run android:reverse`
+ * false = use PRODUCTION_API_URL (hosted website).
+ * true = local Symfony on port 8000 (`symfony server:start` in Comodo-booking) + `npm run android:reverse`
  */
 export const USE_LOCAL_API = false;
 
@@ -69,15 +70,15 @@ const resolveBaseUrl = () => {
 export const BASE_URL = resolveBaseUrl();
 
 /**
- * Railway/production Symfony serves HTTPS only — no WebSocket server on that host yet.
- * When false, the app uses the public echo demo server for the realtime UI.
+ * Try authenticated WebSocket when logged in (local :8001 or wss on API host).
+ * Echo demo is only used from the Profile → realtime demo screen when this fails locally.
  */
-export const USE_BACKEND_WEBSOCKET = USE_LOCAL_API;
+export const USE_BACKEND_WEBSOCKET = true;
 
-/** WebSocket — only used when USE_BACKEND_WEBSOCKET is true (local port 8001). */
+/** WebSocket URL — Symfony WS on 8001 locally, wss on API host in production. */
 export const WS_URL = USE_LOCAL_API
   ? `ws://${DEV_HOST}:8001`
-  : `wss://${new URL(BASE_URL).host}`;
+  : `wss://${new URL(BASE_URL).host}/ws`;
 
 /** Public echo server used when backend WebSocket is unavailable. */
 export const WS_DEMO_ECHO_URL = 'wss://echo.websocket.org';
