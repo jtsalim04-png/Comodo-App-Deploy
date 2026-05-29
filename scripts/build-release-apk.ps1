@@ -6,7 +6,7 @@ $apkOut = Join-Path $androidDir "app\build\outputs\apk\release\app-release.apk"
 $distDir = Join-Path $root "dist"
 
 if (-not (Test-Path $propsPath)) {
-  Write-Host "Missing android/app/keystore.properties — run: npm run android:keystore"
+  Write-Host "Missing android/app/keystore.properties - run: npm run android:keystore"
   exit 1
 }
 

@@ -32,12 +32,14 @@ if (-not (Test-Path $propsPath)) {
   $keyPass = Read-Host "Key password for keystore.properties (Enter to match)"
   if ([string]::IsNullOrWhiteSpace($keyPass)) { $keyPass = $storePass }
 
-  @"
+  $content = @"
 storeFile=keystores/comodo-release.keystore
 storePassword=$storePass
 keyAlias=comodo-release
 keyPassword=$keyPass
-"@ | Set-Content -Path $propsPath -Encoding UTF8
+"@
+  $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+  [System.IO.File]::WriteAllText($propsPath, $content, $utf8NoBom)
 
   Write-Host "Wrote $propsPath"
 }

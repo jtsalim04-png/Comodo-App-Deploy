@@ -75,7 +75,11 @@ def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 def keystorePropertiesFile = file("keystore.properties")
 def keystoreProperties = new Properties()
 if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    def bytes = keystorePropertiesFile.bytes
+    def stream = (bytes.length >= 3 && bytes[0] == (byte) 0xEF && bytes[1] == (byte) 0xBB && bytes[2] == (byte) 0xBF)
+        ? new ByteArrayInputStream(bytes, 3, bytes.length - 3)
+        : new ByteArrayInputStream(bytes)
+    keystoreProperties.load(stream)
 }
 
 android {

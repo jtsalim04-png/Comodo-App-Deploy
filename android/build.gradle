@@ -19,3 +19,13 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+// Windows: node_modules Android build paths exceed MAX_PATH (~260 chars).
+// Redirect library build output to a short root (see Notifee verifyReleaseResources failures).
+def rnShortBuildRoot = new File("C:/c/comodo-rn-build")
+subprojects { subproject ->
+    def projectPath = subproject.projectDir.absolutePath.replace('\\', '/')
+    if (projectPath.contains('/node_modules/')) {
+        subproject.buildDir = new File(rnShortBuildRoot, subproject.name)
+    }
+}
