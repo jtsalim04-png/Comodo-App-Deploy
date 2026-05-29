@@ -1,6 +1,7 @@
 import { eventChannel } from 'redux-saga';
 import { call, cancelled, delay, put, select, take, takeLatest } from 'redux-saga/effects';
 import { createAuthedWebSocket, createDemoEchoWebSocket } from '../api/ws';
+import { USE_BACKEND_WEBSOCKET } from '../api/config';
 import {
   clearActiveWebSocket,
   sendWebSocketMessage,
@@ -61,6 +62,9 @@ function notificationCopy(payload) {
 }
 
 function* notifyFromPayload(payload) {
+  if (payload?.type === 'ws.info') {
+    return;
+  }
   const { title, body } = notificationCopy(payload);
   yield call(showLocalNotification, { title, body, data: payload || {} });
 }
@@ -68,12 +72,13 @@ function* notifyFromPayload(payload) {
 function* runSocketSession(socket, { demo = false } = {}) {
   setActiveWebSocket(socket);
   const channel = yield call(createSocketChannel, socket);
+  const mode = demo ? 'demo' : 'backend';
 
   try {
     while (true) {
       const evt = yield take(channel);
       if (evt.type === 'open') {
-        yield put({ type: RT_CONNECTED });
+        yield put({ type: RT_CONNECTED, payload: { mode } });
         if (demo) {
           socket.send('Comodo WebSocket demo ping');
         }
@@ -103,11 +108,30 @@ function* runSocketSession(socket, { demo = false } = {}) {
   }
 }
 
+function* connectDemoEcho() {
+  yield put({
+    type: RT_MESSAGE,
+    payload: {
+      type: 'ws.info',
+      message:
+        'Deployed API (Railway) has no WebSocket server. Connected to public echo demo for realtime UI.',
+    },
+  });
+  const echoSocket = yield call(createDemoEchoWebSocket);
+  yield call(runSocketSession, echoSocket, { demo: true });
+}
+
 export function* wsConnectLoop() {
   yield take(AUTH_BOOTSTRAP_COMPLETE);
   yield take(RT_CONNECT);
 
   while (true) {
+    if (!USE_BACKEND_WEBSOCKET) {
+      yield call(connectDemoEcho);
+      yield delay(2000);
+      continue;
+    }
+
     let token = yield select(selectApiJwt);
     if (!token) {
       yield take(USER_LOGIN_COMPLETE);
@@ -118,16 +142,7 @@ export function* wsConnectLoop() {
     const backendOk = yield call(runSocketSession, backendSocket, { demo: false });
 
     if (!backendOk) {
-      yield put({
-        type: RT_MESSAGE,
-        payload: {
-          type: 'ws.demo',
-          message:
-            'Backend WebSocket unavailable — switching to public echo demo server.',
-        },
-      });
-      const echoSocket = yield call(createDemoEchoWebSocket);
-      yield call(runSocketSession, echoSocket, { demo: true });
+      yield call(connectDemoEcho);
     }
 
     yield delay(2000);

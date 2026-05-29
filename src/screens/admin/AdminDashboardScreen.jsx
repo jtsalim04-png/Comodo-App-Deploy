@@ -17,6 +17,7 @@ import StatCard from '../../components/StatCard';
 import { authLogout } from '../../app/actions';
 import ScreenBackground from '../../components/ScreenBackground';
 import { fetchEvents } from '../../app/api/events';
+import useAdminLiveUpdates from '../../hooks/useAdminLiveUpdates';
 import { ROUTES, showApiError } from '../../utils';
 import theme from '../../utils/theme';
 
@@ -47,6 +48,8 @@ const AdminDashboardScreen = () => {
     }, [load]),
   );
 
+  useAdminLiveUpdates(() => load());
+
   const stats = useMemo(() => {
     const revenue = events.reduce(
       (sum, event) => sum + Number(event.price || 0),
@@ -73,7 +76,7 @@ const AdminDashboardScreen = () => {
         }>
         <Text style={styles.title}>Admin dashboard</Text>
         <Text style={styles.subtitle}>
-          Overview aligned with the Comodo Booking admin panel.
+          Live updates when customers purchase tickets on the website (no refresh needed).
         </Text>
         <CustomButton
           label="Log out"

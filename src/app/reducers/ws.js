@@ -8,6 +8,8 @@ const MAX_MESSAGES = 20;
 
 const INITIALSTATE = {
   isConnected: false,
+  /** 'backend' | 'demo' | null */
+  connectionMode: null,
   lastMessage: null,
   lastMessageAt: null,
   messages: [],
@@ -16,9 +18,13 @@ const INITIALSTATE = {
 export default function reducer(state = INITIALSTATE, action) {
   switch (action.type) {
     case RT_CONNECTED:
-      return { ...state, isConnected: true };
+      return {
+        ...state,
+        isConnected: true,
+        connectionMode: action.payload?.mode ?? 'backend',
+      };
     case RT_DISCONNECTED:
-      return { ...state, isConnected: false };
+      return { ...state, isConnected: false, connectionMode: null };
     case RT_MESSAGE:
       return {
         ...state,

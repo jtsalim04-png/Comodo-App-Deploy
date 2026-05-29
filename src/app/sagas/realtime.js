@@ -1,6 +1,8 @@
 import { eventChannel } from 'redux-saga';
 import { call, cancelled, delay, put, select, take } from 'redux-saga/effects';
 import { createMercureEventSource } from '../api/mercure';
+import { fetchMercureSubscriberToken, fetchRealtimeConfig } from '../api/realtime';
+import { isAdmin } from '../../utils/roles';
 import {
   AUTH_BOOTSTRAP_COMPLETE,
   RT_CONNECTED,
@@ -10,7 +12,7 @@ import {
   USER_LOGIN_COMPLETE,
 } from '../actions';
 
-const selectApiJwt = state => state?.auth?.data?.token ?? null;
+const selectAuth = state => state.auth?.data ?? null;
 
 function createSseChannel(es) {
   return eventChannel(emit => {
@@ -38,58 +40,105 @@ function safeParseMessage(raw) {
   }
 }
 
-/**
- * Mercure expects a *Mercure JWT* to authorize private topics.
- * For now we connect without hub auth. For private notifications, add an API
- * endpoint that returns a Mercure JWT for the current user.
- */
-export function* realtimeLoop() {
-  // wait until bootstrap happens (so we know if we have a token)
-  yield take(AUTH_BOOTSTRAP_COMPLETE);
+function* runMercureSession(hubUrl, topic, mercureJwt) {
+  const es = yield call(createMercureEventSource, {
+    hubUrl,
+    topics: [topic],
+    mercureJwt,
+  });
+  const ch = yield call(createSseChannel, es);
 
-  // optional manual trigger; App dispatches RT_CONNECT on startup
-  yield take(RT_CONNECT);
-
-  while (true) {
-    // wait for login to exist
-    const token = yield select(selectApiJwt);
-    if (!token) {
-      yield take(USER_LOGIN_COMPLETE);
-      continue;
-    }
-
-    // Public topic examples (adjust to your backend publishing):
-    const topics = [
-      'comodo://user/notifications', // can be public or user-scoped later
-    ];
-
-    const es = yield call(createMercureEventSource, { topics });
-    const ch = yield call(createSseChannel, es);
-
-    try {
-      while (true) {
-        const evt = yield take(ch);
-        if (evt.type === 'open') {
-          yield put({ type: RT_CONNECTED });
-        } else if (evt.type === 'error') {
-          yield put({ type: RT_DISCONNECTED });
-          break;
-        } else if (evt.type === 'message') {
-          yield put({ type: RT_MESSAGE, payload: safeParseMessage(evt.data) });
-        }
-      }
-    } finally {
-      ch.close();
-      if (yield cancelled()) {
-        try {
-          es.close();
-        } catch (e) {}
+  try {
+    while (true) {
+      const evt = yield take(ch);
+      if (evt.type === 'open') {
+        yield put({ type: RT_CONNECTED, payload: { mode: 'mercure' } });
+      } else if (evt.type === 'error') {
         yield put({ type: RT_DISCONNECTED });
-        return;
+        return false;
+      } else if (evt.type === 'message') {
+        yield put({ type: RT_MESSAGE, payload: safeParseMessage(evt.data) });
       }
     }
-
-    yield delay(1500);
+  } finally {
+    ch.close();
+    try {
+      es.close();
+    } catch (e) {}
+    if (yield cancelled()) {
+      yield put({ type: RT_DISCONNECTED });
+    }
   }
 }
 
+function* adminPollingFallback() {
+  while (true) {
+    yield put({
+      type: RT_MESSAGE,
+      payload: { type: 'admin.poll' },
+    });
+    yield delay(12000);
+  }
+}
+
+/**
+ * Admin live updates: Mercure SSE when hub is configured, else periodic refresh poll.
+ */
+export function* adminLiveUpdatesLoop() {
+  yield take(AUTH_BOOTSTRAP_COMPLETE);
+  yield take(RT_CONNECT);
+
+  while (true) {
+    let auth = yield select(selectAuth);
+    if (!auth?.token) {
+      yield take(USER_LOGIN_COMPLETE);
+      auth = yield select(selectAuth);
+    }
+
+    if (!isAdmin(auth)) {
+      yield delay(3000);
+      continue;
+    }
+
+    let config = { enabled: false };
+    try {
+      config = yield call(fetchRealtimeConfig);
+    } catch (e) {
+      // API unreachable — retry later
+      yield delay(5000);
+      continue;
+    }
+
+    if (!config?.enabled || !config?.hubUrl) {
+      yield put({
+        type: RT_MESSAGE,
+        payload: {
+          type: 'ws.info',
+          message:
+            'Live updates: Mercure not configured on server. Polling every 12s instead.',
+        },
+      });
+      yield call(adminPollingFallback);
+      continue;
+    }
+
+    try {
+      const tokenResponse = yield call(fetchMercureSubscriberToken, auth.token);
+      if (!tokenResponse?.token) {
+        yield delay(5000);
+        continue;
+      }
+
+      yield call(
+        runMercureSession,
+        config.hubUrl,
+        config.topic || tokenResponse.topic,
+        tokenResponse.token,
+      );
+    } catch (e) {
+      yield put({ type: RT_DISCONNECTED });
+    }
+
+    yield delay(3000);
+  }
+}

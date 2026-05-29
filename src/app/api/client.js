@@ -1,16 +1,19 @@
 import { Platform } from 'react-native';
 
-import { API_PORT, BASE_URL } from './config';
+import { API_PORT, BASE_URL, USE_LOCAL_API } from './config';
 import { isRouteNotFoundError } from './errors';
 import { notifySessionExpired } from './session';
 import { isJwtAuthError } from './token';
 
 const networkErrorMessage = () => {
-  const hint =
-    Platform.OS === 'android'
+  const localHint =
+    USE_LOCAL_API && Platform.OS === 'android'
       ? ' On a physical Android device over USB, run: npm run android:reverse'
       : '';
-  return `Cannot reach the Comodo website API at ${BASE_URL}.${hint} Start your website with symfony server:start on port ${API_PORT}.`;
+  const localServerHint = USE_LOCAL_API
+    ? ` Start your website with symfony server:start on port ${API_PORT}.`
+    : ' Check your internet connection and that the deployed server is online.';
+  return `Cannot reach the Comodo API at ${BASE_URL}.${localHint}${localServerHint}`;
 };
 
 /** Shared fetch wrapper so login/events/tickets get the same network errors. */

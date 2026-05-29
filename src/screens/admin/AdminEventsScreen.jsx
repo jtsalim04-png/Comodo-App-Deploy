@@ -16,6 +16,7 @@ import EventCard from '../../components/EventCard';
 import CustomButton from '../../components/CustomButton';
 import ScreenBackground from '../../components/ScreenBackground';
 import { deleteEvent, fetchEvents } from '../../app/api/events';
+import useAdminLiveUpdates from '../../hooks/useAdminLiveUpdates';
 import { ROUTES, showApiError } from '../../utils';
 import theme from '../../utils/theme';
 
@@ -43,6 +44,8 @@ const AdminEventsScreen = () => {
       load();
     }, [load]),
   );
+
+  useAdminLiveUpdates(() => load());
 
   const onDelete = event => {
     Alert.alert('Delete event', `Remove "${event.title}"?`, [

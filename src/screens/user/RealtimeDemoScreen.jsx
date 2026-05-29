@@ -6,7 +6,11 @@ import CustomButton from '../../components/CustomButton';
 import ScreenBackground from '../../components/ScreenBackground';
 import { wsSendPing } from '../../app/actions';
 import { showLocalNotification } from '../../app/api/notifications';
-import { WS_DEMO_ECHO_URL, WS_URL } from '../../app/api/config';
+import {
+  USE_BACKEND_WEBSOCKET,
+  WS_DEMO_ECHO_URL,
+  WS_URL,
+} from '../../app/api/config';
 import theme from '../../utils/theme';
 
 const RealtimeDemoScreen = () => {
@@ -19,8 +23,9 @@ const RealtimeDemoScreen = () => {
         <ComodoCard>
           <Text style={styles.title}>WebSocket realtime demo</Text>
           <Text style={styles.subtitle}>
-            Shows live connection status, incoming messages, and local notifications
-            when updates arrive.
+            {USE_BACKEND_WEBSOCKET
+              ? 'Tries your Symfony WebSocket, then falls back to the echo demo server.'
+              : 'Production API (Railway) is HTTPS-only — no WebSocket yet. Uses echo demo for this screen.'}
           </Text>
 
           <View style={styles.row}>
@@ -30,14 +35,20 @@ const RealtimeDemoScreen = () => {
                 styles.badge,
                 ws.isConnected ? styles.badgeOn : styles.badgeOff,
               ]}>
-              {ws.isConnected ? 'Connected' : 'Disconnected'}
+              {ws.isConnected
+                ? ws.connectionMode === 'demo'
+                  ? 'Connected (demo)'
+                  : 'Connected'
+                : 'Disconnected'}
             </Text>
           </View>
 
-          <View style={styles.row}>
-            <Text style={styles.label}>Backend URL</Text>
-            <Text style={styles.mono}>{WS_URL}</Text>
-          </View>
+          {USE_BACKEND_WEBSOCKET ? (
+            <View style={styles.row}>
+              <Text style={styles.label}>Backend URL</Text>
+              <Text style={styles.mono}>{WS_URL}</Text>
+            </View>
+          ) : null}
 
           <View style={styles.row}>
             <Text style={styles.label}>Demo fallback</Text>
