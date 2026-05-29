@@ -1,13 +1,16 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 
 import ComodoCard from '../../components/ComodoCard';
 import CustomButton from '../../components/CustomButton';
 import ScreenBackground from '../../components/ScreenBackground';
 import { authLogout } from '../../app/actions';
+import { ROUTES } from '../../utils';
 import theme from '../../utils/theme';
 
 const UserProfileScreen = () => {
+  const navigation = useNavigation();
   const dispatch = useDispatch();
   const auth = useSelector(state => state.auth);
   const user = auth?.data?.user || {};
@@ -40,6 +43,12 @@ const UserProfileScreen = () => {
               {user.verified ? 'Yes' : 'No'}
             </Text>
           </View>
+          <CustomButton
+            label="WebSocket & notifications demo"
+            variant="primary"
+            containerStyle={styles.demoBtn}
+            onPress={() => navigation.navigate(ROUTES.REALTIME_DEMO)}
+          />
           <CustomButton
             label="Log out"
             variant="danger"
@@ -77,8 +86,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: theme.fontSize.body,
   },
-  logout: {
+  demoBtn: {
     marginTop: theme.spacing.lg,
+  },
+  logout: {
+    marginTop: theme.spacing.sm,
   },
 });
 

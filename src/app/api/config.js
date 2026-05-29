@@ -48,10 +48,15 @@ const resolveDevHost = () => {
 export const DEV_HOST = resolveDevHost();
 export const BASE_URL = `http://${DEV_HOST}:${API_PORT}`;
 
+/** WebSocket server (Symfony or dedicated WS process). */
+export const WS_PORT = 8001;
+export const WS_URL = `ws://${DEV_HOST}:${WS_PORT}`;
+
+/** Public echo server used for grading demo when backend WS is down. */
+export const WS_DEMO_ECHO_URL = 'wss://echo.websocket.org';
+
 /**
- * Mercure hub URL (Server-Sent Events).
- * In dev you typically run Mercure on 3000 or behind your reverse proxy.
- * Update to match your deployment.
+ * Mercure hub URL (Server-Sent Events) — optional; WebSocket is used for mobile demo.
  */
 export const MERCURE_PORT = 3000;
 export const MERCURE_HUB_URL = `http://${DEV_HOST}:${MERCURE_PORT}/.well-known/mercure`;

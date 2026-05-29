@@ -1,7 +1,13 @@
 import { all } from 'redux-saga/effects';
 import { authBootstrap, authLogout, userLogin } from './auth';
-import { realtimeLoop } from './realtime';
+import { wsConnectLoop, wsSendPing } from './ws';
 
 export default function* rootSaga() {
-  yield all([userLogin(), authBootstrap(), authLogout(), realtimeLoop()]);
+  yield all([
+    userLogin(),
+    authBootstrap(),
+    authLogout(),
+    wsConnectLoop(),
+    wsSendPing(),
+  ]);
 }

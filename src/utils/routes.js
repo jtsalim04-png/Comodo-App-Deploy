@@ -9,6 +9,7 @@ export default {
   USER_MY_TICKETS: 'UserMyTickets',
   USER_TICKET_DETAIL: 'UserTicketDetail',
   USER_PROFILE: 'UserProfile',
+  REALTIME_DEMO: 'RealtimeDemo',
 
   // Admin
   ADMIN_DASHBOARD: 'AdminDashboard',

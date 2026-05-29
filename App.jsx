@@ -8,8 +8,11 @@ import AppNav from './src/navigations';
 import rootSaga from './src/app/sagas';
 import configureStore from './src/app/reducers';
 import { Provider } from 'react-redux';
-import { authBootstrap } from './src/app/actions';
-import { rtConnect } from './src/app/actions';
+import { authBootstrap, rtConnect } from './src/app/actions';
+import {
+  ensureNotificationChannel,
+  requestNotificationPermission,
+} from './src/app/api/notifications';
 
 const { store, runSaga } = configureStore();
 runSaga(rootSaga);
@@ -18,6 +21,8 @@ const App = () => {
   console.log('App rendering started');
 
   useEffect(() => {
+    ensureNotificationChannel();
+    requestNotificationPermission();
     store.dispatch(authBootstrap());
     store.dispatch(rtConnect());
   }, []);

@@ -11,6 +11,7 @@ import UserEventDetailScreen from '../screens/user/UserEventDetailScreen';
 import UserMyTicketsScreen from '../screens/user/UserMyTicketsScreen';
 import UserTicketDetailScreen from '../screens/user/UserTicketDetailScreen';
 import UserProfileScreen from '../screens/user/UserProfileScreen';
+import RealtimeDemoScreen from '../screens/user/RealtimeDemoScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -102,6 +103,11 @@ const UserNavigation = () => (
       name={ROUTES.USER_TICKET_DETAIL}
       component={UserTicketDetailScreen}
       options={{ title: 'Ticket' }}
+    />
+    <Stack.Screen
+      name={ROUTES.REALTIME_DEMO}
+      component={RealtimeDemoScreen}
+      options={{ title: 'Realtime demo' }}
     />
   </Stack.Navigator>
 );
