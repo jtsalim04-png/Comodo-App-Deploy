@@ -19,7 +19,8 @@ import CustomTextInput from '../../components/CustomTextInput';
 import ScreenBackground from '../../components/ScreenBackground';
 import { IMG, ROUTES } from '../../utils';
 import theme from '../../utils/theme';
-import { authLogin } from '../../app/actions';
+import { authGoogleLogin, authLogin } from '../../app/actions';
+import { GOOGLE_WEB_CLIENT_ID } from '../../app/api/config';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -88,6 +89,15 @@ const Login = () => {
               }}
             />
 
+            {GOOGLE_WEB_CLIENT_ID ? (
+              <CustomButton
+                label="Continue with Google"
+                variant="secondary"
+                containerStyle={styles.googleBtn}
+                onPress={() => dispatch(authGoogleLogin())}
+              />
+            ) : null}
+
             <View style={styles.footer}>
               <Text style={styles.footerText}>Don&apos;t have an account?</Text>
               <TouchableOpacity
@@ -133,6 +143,9 @@ const styles = StyleSheet.create({
   },
   buttonWrap: {
     marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+  },
+  googleBtn: {
     marginBottom: theme.spacing.md,
   },
   footer: {

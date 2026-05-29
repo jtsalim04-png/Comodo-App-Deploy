@@ -5,6 +5,7 @@
 export const API_PATHS = {
   entrypoint: '/api',
   login: '/api/login',
+  googleAuth: '/api/auth/google',
   register: '/api/register',
   events: '/api/events',
   tickets: '/api/tickets',

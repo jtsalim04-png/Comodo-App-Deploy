@@ -15,6 +15,12 @@ export const METRO_PORT = 8082;
  */
 export const DEV_API_HOST_OVERRIDE = null;
 
+/**
+ * OAuth 2.0 Web Client ID from Google Cloud Console (same value as Symfony GOOGLE_CLIENT_ID).
+ * Required for Google Sign-In idToken audience verification on the backend.
+ */
+export const GOOGLE_WEB_CLIENT_ID = null;
+
 const isAndroidEmulator = () => {
   if (Platform.OS !== 'android') {
     return false;

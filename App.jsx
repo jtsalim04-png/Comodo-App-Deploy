@@ -13,6 +13,7 @@ import {
   ensureNotificationChannel,
   requestNotificationPermission,
 } from './src/app/api/notifications';
+import { configureGoogleSignIn } from './src/app/api/googleSignIn';
 
 const { store, runSaga } = configureStore();
 runSaga(rootSaga);
@@ -21,6 +22,7 @@ const App = () => {
   console.log('App rendering started');
 
   useEffect(() => {
+    configureGoogleSignIn();
     ensureNotificationChannel();
     requestNotificationPermission();
     store.dispatch(authBootstrap());

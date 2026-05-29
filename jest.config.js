@@ -11,6 +11,6 @@ module.exports = {
     ),
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|react-redux|react-native-sse)/)',
+    'node_modules/(?!(react-native|@react-native|@react-navigation|react-redux|react-native-sse|@react-native-google-signin)/)',
   ],
 };

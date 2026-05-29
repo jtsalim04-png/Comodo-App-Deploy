@@ -1,4 +1,5 @@
 export const USER_LOGIN = 'USER_LOGIN';
+export const USER_GOOGLE_LOGIN = 'USER_GOOGLE_LOGIN';
 export const USER_LOGIN_REQUEST = 'USER_LOGIN_REQUEST';
 export const USER_LOGIN_COMPLETE = 'USER_LOGIN_COMPLETE';
 export const USER_LOGIN_ERROR = 'USER_LOGIN_ERROR';
@@ -16,6 +17,10 @@ export const WS_SEND_PING = 'WS_SEND_PING';
 export const authLogin = payload => ({
   type: USER_LOGIN,
   payload,
+});
+
+export const authGoogleLogin = () => ({
+  type: USER_GOOGLE_LOGIN,
 });
 
 export const authLogout = () => ({

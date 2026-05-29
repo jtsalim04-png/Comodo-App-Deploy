@@ -75,3 +75,29 @@ export async function userLogin({ email, password }) {
     'Login failed';
   throw new Error(message);
 }
+
+export async function googleAuth({ idToken }) {
+  const response = await fetchWithNetworkHint(
+    `${BASE_URL}${API_PATHS.googleAuth}`,
+    {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ idToken }),
+    },
+  );
+
+  const data = await parseJsonResponse(response);
+
+  if (response.ok) {
+    return data;
+  }
+
+  const message =
+    data?.message ||
+    data?.detail ||
+    `Google sign-in failed (${response.status})`;
+  throw new Error(message);
+}
